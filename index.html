@@ -291,10 +291,9 @@
                 <button id="micToggle" style="padding: 10px; width: 100%; font-size: 16px; border-radius: 5px; border: none; background: rgba(255, 255, 255, 0.2); color: white; cursor: pointer;">Enable Microphone</button>
             </div>
             <div class="control-row">
-                <div class="control-label">Microphone</div>
-                <select id="micSelect" class="audio-mapping-select" disabled>
-                    <option value="">Select microphone...</option>
-                </select>
+                <div class="control-label">Sensitivity</div>
+                <input type="range" id="audioSensitivity" min="0.5" max="10" step="0.5" value="5.0">
+                <div class="value-display" id="audioSensitivityValue">5.0</div>
             </div>
             <div class="control-row" style="align-items: flex-start;">
                 <div class="control-label">Live Input</div>
@@ -304,51 +303,6 @@
                         Audio visualizer<br>will appear here
                     </div>
                 </div>
-            </div>
-            <div class="control-row">
-                <div class="control-label">Sensitivity</div>
-                <input type="range" id="audioSensitivity" min="0.1" max="5" step="0.1" value="1.0">
-                <div class="value-display" id="audioSensitivityValue">1.0</div>
-            </div>
-            <div id="audioMappings">
-                <div class="control-row">
-                    <div class="control-label">Bass → </div>
-                    <select id="bassMapping" class="audio-mapping-select">
-                        <option value="waveSpeed">Wave Speed</option>
-                        <option value="wavelength" selected>Wavelength</option>
-                        <option value="colorCycle">Color Cycle</option>
-                        <option value="colorSpread">Color Spread</option>
-                        <option value="centerSpeed">Center Speed</option>
-                        <option value="none">None</option>
-                    </select>
-                </div>
-                <div class="control-row">
-                    <div class="control-label">Mid → </div>
-                    <select id="midMapping" class="audio-mapping-select">
-                        <option value="waveSpeed">Wave Speed</option>
-                        <option value="wavelength">Wavelength</option>
-                        <option value="colorCycle" selected>Color Cycle</option>
-                        <option value="colorSpread">Color Spread</option>
-                        <option value="centerSpeed">Center Speed</option>
-                        <option value="none">None</option>
-                    </select>
-                </div>
-                <div class="control-row">
-                    <div class="control-label">Treble → </div>
-                    <select id="trebleMapping" class="audio-mapping-select">
-                        <option value="waveSpeed" selected>Wave Speed</option>
-                        <option value="wavelength">Wavelength</option>
-                        <option value="colorCycle">Color Cycle</option>
-                        <option value="colorSpread">Color Spread</option>
-                        <option value="centerSpeed">Center Speed</option>
-                        <option value="none">None</option>
-                    </select>
-                </div>
-            </div>
-            <div id="audioLevels" class="audio-levels" style="display: flex; height: 20px; margin-top: 10px; background: rgba(0,0,0,0.3); border-radius: 3px;">
-                <div id="bassLevel" style="flex: 1; height: 100%; background: rgb(255,50,50); transform-origin: left; transform: scaleX(0);"></div>
-                <div id="midLevel" style="flex: 1; height: 100%; background: rgb(50,255,50); transform-origin: left; transform: scaleX(0);"></div>
-                <div id="trebleLevel" style="flex: 1; height: 100%; background: rgb(50,50,255); transform-origin: left; transform: scaleX(0);"></div>
             </div>
         </div>
     </div>
@@ -376,10 +330,7 @@
             lockColorRange: true,
             showStats: true,
             audioEnabled: false,
-            audioSensitivity: 1.0,
-            bassMapping: 'wavelength',
-            midMapping: 'colorCycle',
-            trebleMapping: 'waveSpeed'
+            audioSensitivity: 5.0      // Higher default sensitivity for dramatic effect
         };
         
         // Audio variables
@@ -387,20 +338,13 @@
         let analyser;
         let microphone;
         let audioDataArray;
-        let timeDataArray;
-        const AUDIO_FFT_SIZE = 1024;
-        const BASS_RANGE = [20, 250];    // 20Hz - 250Hz
-        const MID_RANGE = [250, 2000];   // 250Hz - 2kHz
-        const TREBLE_RANGE = [2000, 16000]; // 2kHz - 16kHz
+        const AUDIO_FFT_SIZE = 2048; // Larger FFT size for better frequency resolution
         let audioVisualizerCtx;
-        let selectedMicId = '';
-        let microphoneDevices = [];
-        
-        // Audio level visualization
-        let bassValue = 0;
-        let midValue = 0;
-        let trebleValue = 0;
         let visualizerAnimationId = null;
+        
+        // Audio level variables
+        let audioLevel = 0;
+        let smoothedAudioLevel = 0;
         
         // Original values to return to when audio is disabled
         const originalValues = {};
@@ -569,46 +513,7 @@
                 let audioStatus = '';
                 
                 if (settings.audioEnabled) {
-                    // Get current microphone label - using actual tracked device
-                    let micLabel = "Default Microphone";
-                    
-                    // First try getting the label from the select element (most reliable)
-                    const micSelect = document.getElementById('micSelect');
-                    if (micSelect && micSelect.selectedIndex > 0) {
-                        const selectedOption = micSelect.options[micSelect.selectedIndex];
-                        micLabel = selectedOption.textContent;
-                    } 
-                    // Fallback: search through device list
-                    else {
-                        const selectedMic = microphoneDevices.find(device => device.deviceId === selectedMicId);
-                        if (selectedMic && selectedMic.label) {
-                            micLabel = selectedMic.label;
-                        }
-                    }
-                    
-                    // Format to get a concise label
-                    if (micLabel.includes('(')) {
-                        const parts = micLabel.split('(');
-                        // For Mac we often want the part in parentheses which shows if it's built-in, etc.
-                        const part1 = parts[0].trim();
-                        const part2 = parts[1].replace(')', '').trim();
-                        
-                        // Use the more informative part or combine them
-                        if (part1.toLowerCase().includes('default') || part1.length < 3) {
-                            micLabel = part2;
-                        } else if (part2.toLowerCase().includes('built-in')) {
-                            micLabel = `${part1} (Built-in)`;
-                        } else {
-                            micLabel = part1;
-                        }
-                    }
-                    
-                    // Final truncation if needed
-                    if (micLabel.length > 25) {
-                        micLabel = micLabel.substring(0, 22) + '...';
-                    }
-                    
-                    audioStatus = `<br>Audio: ON [${micLabel}]<br>Levels: B:${bassValue.toFixed(2)}, M:${midValue.toFixed(2)}, T:${trebleValue.toFixed(2)}`;
+                    audioStatus = `<br>Audio: ON<br>Level: ${smoothedAudioLevel.toFixed(2)}`;
                 }
                 
                 statsDiv.innerHTML = `
@@ -621,93 +526,7 @@
             }
         }
         
-        // Force device enumeration with full labels
-        async function forceDeviceEnumeration() {
-            try {
-                // We need to get actual access to the microphone to get the full device labels
-                console.log("Requesting temporary microphone access to get device labels...");
-                const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                
-                // Now that we have permission, enumerate devices - this should give us full labels
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                
-                // Log all found devices to console to help debug
-                console.log("All devices found:", devices);
-                
-                // We don't need to keep this stream, just needed for permission
-                tempStream.getTracks().forEach(track => {
-                    console.log(`Stopping temporary track: ${track.kind} - ${track.label}`);
-                    track.stop();
-                });
-                
-                return devices.filter(device => device.kind === 'audioinput');
-            } catch (error) {
-                console.error('Error enumerating devices with full labels:', error);
-                return [];
-            }
-        }
-        
-        // Enumerate available audio devices
-        async function enumerateAudioDevices() {
-            try {
-                // Force enumeration with permissions to get full device labels
-                microphoneDevices = await forceDeviceEnumeration();
-                
-                if (microphoneDevices.length === 0) {
-                    console.warn("No microphone devices found or permission denied");
-                    return [];
-                }
-                
-                // Populate the dropdown
-                const select = document.getElementById('micSelect');
-                select.innerHTML = '<option value="">Select microphone...</option>';
-                
-                // Log which devices we found
-                console.log('Available microphones:', microphoneDevices.map(d => d.label || 'Unnamed device'));
-                
-                // Add each device to the dropdown
-                microphoneDevices.forEach((device, index) => {
-                    const option = document.createElement('option');
-                    option.value = device.deviceId;
-                    
-                    // Get proper label for the device
-                    // Starting with default if no label is available
-                    let label = device.label;
-                    if (!label || label.trim() === '') {
-                        label = `Microphone ${index + 1}`;
-                    }
-                    
-                    // For macOS, which often has format: "Device Name (Type)"
-                    if (label.includes('(')) {
-                        option.setAttribute('data-full-name', label);
-                    }
-                    
-                    // Keep labels reasonably sized
-                    if (label.length > 30) {
-                        label = label.substring(0, 27) + '...';
-                    }
-                    
-                    option.textContent = label;
-                    select.appendChild(option);
-                });
-                
-                // Enable the select if we have microphones
-                select.disabled = microphoneDevices.length === 0;
-                
-                // If we have devices but no selection, select the first one
-                if (microphoneDevices.length > 0 && !selectedMicId) {
-                    selectedMicId = microphoneDevices[0].deviceId;
-                    select.value = selectedMicId;
-                }
-                
-                return microphoneDevices;
-            } catch (error) {
-                console.error('Error enumerating devices:', error);
-                return [];
-            }
-        }
-        
-        // Initialize the audio visualizer with DOM fallback
+        // Initialize the audio visualizer
         function initAudioVisualizer() {
             // Show fallback message initially
             document.getElementById('visualizerFallback').style.display = 'flex';
@@ -725,29 +544,13 @@
                 const container = canvas.parentElement;
                 const rect = container.getBoundingClientRect();
                 
-                // Log for debugging
-                console.log("Visualizer container size:", rect.width, "x", rect.height);
-                
-                // Set canvas dimensions to match container (crucial step)
+                // Set canvas dimensions to match container
                 canvas.width = Math.max(rect.width, 100);
                 canvas.height = Math.max(rect.height, 50);
-                
-                console.log("Canvas size set to:", canvas.width, "x", canvas.height);
                 
                 // Draw initial state - black background
                 audioVisualizerCtx.fillStyle = '#000000';
                 audioVisualizerCtx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                // Initialize with empty bars
-                const barCount = 10;
-                const barWidth = Math.floor((canvas.width - (barCount+1)) / barCount);
-                
-                audioVisualizerCtx.fillStyle = 'rgba(100, 200, 255, 0.2)';
-                
-                for (let i = 0; i < barCount; i++) {
-                    const barX = i * (barWidth + 1) + 1;
-                    audioVisualizerCtx.fillRect(barX, canvas.height - 5, barWidth, 5);
-                }
                 
                 // Hide fallback message now that canvas is working
                 document.getElementById('visualizerFallback').style.display = 'none';
@@ -761,14 +564,14 @@
             }
         }
         
-        // Completely simplified visualizer using DOM elements as backup approach
+        // Draw the audio visualizer with a smooth waveform
         function drawAudioVisualizer() {
             if (!settings.audioEnabled || !analyser) {
                 return;
             }
             
             try {
-                // Get frequency data (works better than time data for simple visualization)
+                // Get frequency data for visualization
                 if (!audioDataArray) {
                     audioDataArray = new Uint8Array(analyser.frequencyBinCount);
                 }
@@ -788,46 +591,53 @@
                     }
                 }
                 
-                // Clear canvas
-                audioVisualizerCtx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+                // Clear canvas with fade effect
+                audioVisualizerCtx.fillStyle = 'rgba(0, 0, 0, 0.3)';
                 audioVisualizerCtx.fillRect(0, 0, width, height);
                 
-                // Simplified bar visualization with fewer bars
-                const barCount = 10; // Fewer, more visible bars
-                const barWidth = Math.floor((width - (barCount+1)) / barCount);
-                const barSpacing = 1;
+                // Create a smooth waveform visualization
+                audioVisualizerCtx.beginPath();
+                audioVisualizerCtx.moveTo(0, height);
                 
-                // Use frequency data for nice visualization
-                // Divide frequency data into ranges
-                const totalBins = audioDataArray.length;
-                const binsPerBar = Math.floor(totalBins / barCount);
+                // Use a subset of the frequency data for a smoother visualization
+                const step = Math.max(1, Math.floor(audioDataArray.length / width));
+                const smoothFactor = 0.7; // Controls how smooth the curve is
                 
-                for (let i = 0; i < barCount; i++) {
-                    // Get average value for this frequency range
-                    let sum = 0;
-                    const startBin = i * binsPerBar;
-                    const endBin = Math.min(startBin + binsPerBar, totalBins);
+                for (let i = 0; i < width; i++) {
+                    const dataIndex = Math.min(i * step, audioDataArray.length - 1);
+                    let value = audioDataArray[dataIndex] / 255.0; // Normalize to 0-1
                     
-                    for (let j = startBin; j < endBin; j++) {
-                        sum += audioDataArray[j];
+                    // Apply the audio level to the current visualization
+                    const y = height - (value * height * 0.9);
+                    
+                    // Use smooth curves instead of straight lines
+                    if (i === 0) {
+                        audioVisualizerCtx.moveTo(i, y);
+                    } else {
+                        const previousX = (i - 1);
+                        const previousY = height - (audioDataArray[Math.min((i-1) * step, audioDataArray.length - 1)] / 255.0 * height * 0.9);
+                        const cpX1 = previousX + (i - previousX) * smoothFactor;
+                        const cpX2 = previousX + (i - previousX) * (1 - smoothFactor);
+                        audioVisualizerCtx.bezierCurveTo(cpX1, previousY, cpX2, y, i, y);
                     }
-                    
-                    // Calculate average (0-255)
-                    const average = sum / binsPerBar;
-                    
-                    // Scale to height (leaves a small margin)
-                    const barHeight = Math.max(2, (average / 255) * (height - 4));
-                    
-                    // Calculate color based on frequency (blue to cyan to green)
-                    const hue = 180 + (i / barCount) * 60; // 180-240 range (cyan-blue)
-                    audioVisualizerCtx.fillStyle = `hsl(${hue}, 80%, 60%)`;
-                    
-                    // Draw bar from bottom
-                    const barX = i * (barWidth + barSpacing) + barSpacing;
-                    const barY = height - barHeight;
-                    
-                    audioVisualizerCtx.fillRect(barX, barY, barWidth, barHeight);
                 }
+                
+                // Complete the path to create a filled shape
+                audioVisualizerCtx.lineTo(width, height);
+                audioVisualizerCtx.closePath();
+                
+                // Create a gradient for the waveform
+                const gradient = audioVisualizerCtx.createLinearGradient(0, 0, 0, height);
+                gradient.addColorStop(0, 'rgba(100, 200, 255, 0.8)');
+                gradient.addColorStop(1, 'rgba(0, 100, 150, 0.2)');
+                
+                audioVisualizerCtx.fillStyle = gradient;
+                audioVisualizerCtx.fill();
+                
+                // Add a glowing outline
+                audioVisualizerCtx.strokeStyle = 'rgba(100, 255, 255, 0.6)';
+                audioVisualizerCtx.lineWidth = 1.5;
+                audioVisualizerCtx.stroke();
                 
                 // Hide fallback when visualization is working
                 document.getElementById('visualizerFallback').style.display = 'none';
@@ -837,16 +647,12 @@
                 
             } catch (error) {
                 console.error("Error in audio visualizer:", error);
-                
-                // Show fallback message since visualization failed
                 document.getElementById('visualizerFallback').style.display = 'flex';
-                
-                // Still continue animation in case it can recover
                 visualizerAnimationId = requestAnimationFrame(drawAudioVisualizer);
             }
         }
                 
-        // Setup audio processing
+        // Setup audio processing with simplified approach
         async function setupAudio() {
             try {
                 // Store original values before audio takes over
@@ -857,31 +663,23 @@
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 }
                 
-                // Enumerate available audio devices (this will show proper labels)
-                await enumerateAudioDevices();
-                
-                console.log(`Using microphone with ID: ${selectedMicId}`);
-                
-                // Get microphone access with selected device if available
-                const constraints = { 
-                    audio: selectedMicId ? { deviceId: { exact: selectedMicId } } : true,
+                // Get microphone access
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: true,
                     video: false 
-                };
+                });
                 
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                
-                // Create audio analyser
+                // Create audio analyser with larger FFT for better frequency resolution
                 analyser = audioContext.createAnalyser();
                 analyser.fftSize = AUDIO_FFT_SIZE;
-                analyser.smoothingTimeConstant = 0.85;
+                analyser.smoothingTimeConstant = 0.9; // Higher for smoother transitions
                 
                 // Connect microphone to analyser
                 microphone = audioContext.createMediaStreamSource(stream);
                 microphone.connect(analyser);
                 
-                // Create data arrays for analysis
+                // Create data array for analysis
                 audioDataArray = new Uint8Array(analyser.frequencyBinCount);
-                timeDataArray = new Uint8Array(analyser.frequencyBinCount);
                 
                 // Initialize and start the audio visualizer
                 initAudioVisualizer();
@@ -894,18 +692,9 @@
                 // Enable audio in settings
                 settings.audioEnabled = true;
                 
-                // Enable the microphone selection dropdown
-                document.getElementById('micSelect').disabled = false;
-                
                 // Update the UI
                 document.getElementById('micToggle').textContent = 'Disable Microphone';
                 document.getElementById('micToggle').style.background = 'rgba(255, 100, 100, 0.4)';
-                
-                // Make sure the current microphone is selected in the dropdown
-                const micSelect = document.getElementById('micSelect');
-                if (selectedMicId && micSelect.value !== selectedMicId) {
-                    micSelect.value = selectedMicId;
-                }
                 
                 console.log('Audio setup complete');
             } catch (error) {
@@ -948,20 +737,12 @@
                 analyser = null;
                 audioContext = null;
                 settings.audioEnabled = false;
+                audioLevel = 0;
+                smoothedAudioLevel = 0;
                 
                 // Update the UI
                 document.getElementById('micToggle').textContent = 'Enable Microphone';
                 document.getElementById('micToggle').style.background = 'rgba(255, 255, 255, 0.2)';
-                document.getElementById('micSelect').disabled = true;
-                
-                // Reset audio level indicators
-                document.getElementById('bassLevel').style.transform = 'scaleX(0)';
-                document.getElementById('midLevel').style.transform = 'scaleX(0)';
-                document.getElementById('trebleLevel').style.transform = 'scaleX(0)';
-                
-                bassValue = 0;
-                midValue = 0;
-                trebleValue = 0;
                 
                 console.log('Audio stopped');
             }
@@ -974,6 +755,9 @@
             originalValues.colorCycleSpeed = settings.colorCycleSpeed;
             originalValues.colorSpread = settings.colorSpread;
             originalValues.centerMovementSpeed = settings.centerMovementSpeed;
+            
+            // Log values for debugging
+            console.log('Saved original values:', {...originalValues});
         }
         
         // Restore original values when audio is disabled
@@ -1001,87 +785,67 @@
             document.getElementById('centerMovementSpeedValue').textContent = settings.centerMovementSpeed;
         }
         
-        // Process audio data and update visualization parameters
+        // Process audio data and update visualization parameters - simplified version
         function processAudio() {
             if (!settings.audioEnabled || !analyser) return;
             
             // Get frequency data
             analyser.getByteFrequencyData(audioDataArray);
             
-            // Get frequency ranges
-            const frequencyResolution = audioContext.sampleRate / AUDIO_FFT_SIZE;
+            // Calculate the overall audio level from the entire frequency range
+            let sum = 0;
+            const len = audioDataArray.length;
             
-            // Calculate indices for different frequency ranges
-            const bassStart = Math.floor(BASS_RANGE[0] / frequencyResolution);
-            const bassEnd = Math.floor(BASS_RANGE[1] / frequencyResolution);
-            
-            const midStart = Math.floor(MID_RANGE[0] / frequencyResolution);
-            const midEnd = Math.floor(MID_RANGE[1] / frequencyResolution);
-            
-            const trebleStart = Math.floor(TREBLE_RANGE[0] / frequencyResolution);
-            const trebleEnd = Math.min(Math.floor(TREBLE_RANGE[1] / frequencyResolution), audioDataArray.length - 1);
-            
-            // Calculate average levels for each range
-            let bassSum = 0;
-            for (let i = bassStart; i < bassEnd; i++) {
-                bassSum += audioDataArray[i];
-            }
-            
-            let midSum = 0;
-            for (let i = midStart; i < midEnd; i++) {
-                midSum += audioDataArray[i];
-            }
-            
-            let trebleSum = 0;
-            for (let i = trebleStart; i < trebleEnd; i++) {
-                trebleSum += audioDataArray[i];
+            // Get weighted average across all frequencies
+            // Give more weight to lower frequencies for better visual impact
+            for (let i = 0; i < len; i++) {
+                // Lower frequencies (i closer to 0) get more weight
+                const weight = 1 - (i / len) * 0.5; // Weight from 1.0 to 0.5
+                sum += audioDataArray[i] * weight;
             }
             
             // Normalize to 0-1 range
-            bassValue = (bassSum / (bassEnd - bassStart)) / 255;
-            midValue = (midSum / (midEnd - midStart)) / 255;
-            trebleValue = (trebleSum / (trebleEnd - trebleStart)) / 255;
+            const rawLevel = sum / (len * 0.75) / 255; // 0.75 compensates for the weighting
             
-            // Apply sensitivity
+            // Apply sensitivity - higher sensitivity means more dramatic effects
             const sensitivity = settings.audioSensitivity;
-            bassValue = Math.min(1, bassValue * sensitivity);
-            midValue = Math.min(1, midValue * sensitivity);
-            trebleValue = Math.min(1, trebleValue * sensitivity);
+            audioLevel = Math.min(1, rawLevel * sensitivity);
             
-            // Update visualizer bars
-            document.getElementById('bassLevel').style.transform = `scaleX(${bassValue})`;
-            document.getElementById('midLevel').style.transform = `scaleX(${midValue})`;
-            document.getElementById('trebleLevel').style.transform = `scaleX(${trebleValue})`;
+            // Smooth the audio level for more fluid transitions
+            // Use a weighted average to smooth transitions but still be responsive
+            const smoothingFactor = 0.8; // Higher = smoother (0-1)
+            smoothedAudioLevel = smoothedAudioLevel * smoothingFactor + audioLevel * (1 - smoothingFactor);
             
-            // Apply mappings to settings
-            applyAudioMapping(settings.bassMapping, bassValue);
-            applyAudioMapping(settings.midMapping, midValue);
-            applyAudioMapping(settings.trebleMapping, trebleValue);
+            // Apply the smoothed audio level to create a trippy and dramatic effect
+            // The goal is a fluid, not jumpy, but dramatic effect
+            applyAudioEffects(smoothedAudioLevel);
         }
         
-        // Apply audio value to the mapped parameter
-        function applyAudioMapping(mapping, value) {
-            switch (mapping) {
-                case 'waveSpeed':
-                    settings.waveSpeed = originalValues.waveSpeed * (1 + value * 3);
-                    break;
-                case 'wavelength':
-                    settings.baseWavelength = originalValues.baseWavelength * (1 + value * 5);
-                    break;
-                case 'colorCycle':
-                    settings.colorCycleSpeed = originalValues.colorCycleSpeed * (1 + value * 5);
-                    break;
-                case 'colorSpread':
-                    settings.colorSpread = originalValues.colorSpread * (1 + value * 3);
-                    break;
-                case 'centerSpeed':
-                    settings.centerMovementSpeed = originalValues.centerMovementSpeed * (1 + value * 5);
-                    break;
-                case 'none':
-                    // Do nothing
-                    break;
-            }
+        // Apply dramatic audio effects
+        function applyAudioEffects(level) {
+            // Create trippy effects that are dramatic but smooth
+            
+            // 1. Wave speed: Varies from normal to 4x faster based on audio level
+            settings.waveSpeed = originalValues.waveSpeed * (1 + level * 4);
+            
+            // 2. Wavelength: Make wavelength vary dramatically with audio
+            settings.baseWavelength = originalValues.baseWavelength * (1 + level * 6);
+            
+            // 3. Boosted center movement for a more dynamic feel
+            settings.centerMovementSpeed = originalValues.centerMovementSpeed * (1 + level * 5);
+            
+            // 4. Increase color cycle speed with audio level
+            settings.colorCycleSpeed = originalValues.colorCycleSpeed * (1 + level * 8);
+            
+            // 5. Vary color spread for more vibrant visuals
+            settings.colorSpread = originalValues.colorSpread * (1 + level * 3);
+            
+            // Ensure no settings exceed reasonable limits
+            settings.waveSpeed = Math.min(settings.waveSpeed, 0.5);
+            settings.baseWavelength = Math.min(settings.baseWavelength, 150);
+            settings.centerMovementSpeed = Math.min(settings.centerMovementSpeed, 0.25);
         }
+        
         
         // Resize handler
         function handleResize() {
@@ -1267,33 +1031,9 @@
             }
         });
         
-        document.getElementById('micSelect').addEventListener('change', function() {
-            if (this.value) {
-                selectedMicId = this.value;
-                
-                // If audio is already enabled, restart with new microphone
-                if (settings.audioEnabled) {
-                    stopAudio();
-                    setTimeout(() => setupAudio(), 300); // Small delay to ensure cleanup
-                }
-            }
-        });
-        
         document.getElementById('audioSensitivity').addEventListener('input', function() {
             settings.audioSensitivity = parseFloat(this.value);
             document.getElementById('audioSensitivityValue').textContent = this.value;
-        });
-        
-        document.getElementById('bassMapping').addEventListener('change', function() {
-            settings.bassMapping = this.value;
-        });
-        
-        document.getElementById('midMapping').addEventListener('change', function() {
-            settings.midMapping = this.value;
-        });
-        
-        document.getElementById('trebleMapping').addEventListener('change', function() {
-            settings.trebleMapping = this.value;
         });
         
         // Initialize
