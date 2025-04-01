@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wave Interference with Improved Controls</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            background: #000;
+        }
+        /* Ensure canvas fills the screen */
+        #myCanvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+        /* Style for the control panel */
+        #controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-height: 80vh;
+            overflow-y: auto;
+            backdrop-filter: blur(5px);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            box-sizing: border-box;
+        }
+        .control-group {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            margin: 5px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            width: calc(100% - 20px);
+            max-width: 95%;
+            box-sizing: border-box;
+        }
+        .control-group h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #aaa;
+        }
+        .control-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .control-row:last-child {
+            margin-bottom: 0;
+        }
+        .control-label {
+            width: 90px;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+        input[type="range"] {
+            flex-grow: 1;
+            height: 16px; /* Increased height for mobile */
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px; /* Increased size for mobile */
+            height: 24px; /* Increased size for mobile */
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            border: none;
+        }
+        input[type="checkbox"] {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+        }
+        .value-display {
+            min-width: 45px;
+            font-size: 12px;
+            text-align: right;
+            margin-left: 10px;
+        }
+        #toggleControls {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 15px; /* Larger touch target */
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 10;
+            font-size: 14px;
+        }
+        .color-preview {
+            display: flex;
+            padding: 5px;
+            margin-top: 5px;
+            border-radius: 3px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        .color-box {
+            height: 20px;
+            flex-grow: 1;
+            margin: 0 1px;
+        }
+        #stats {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            display: none;
+            z-index: 5;
+        }
+        
+        /* Media queries for responsive design */
+        @media (min-width: 768px) {
+            #controls {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: space-around;
+                padding: 15px;
+                max-height: 60vh;
+            }
+            .control-group {
+                width: auto;
+                min-width: 280px;
+                max-width: 350px;
+                margin: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="myCanvas"></canvas>
+    <div id="stats"></div>
+    <div id="controls" style="display: none;">
+        <div class="control-group">
+            <h3>Wave Properties</h3>
+            <div class="control-row">
+                <div class="control-label">Wave Speed</div>
+                <input type="range" id="waveSpeed" min="0" max="0.2" step="0.01" value="0.05">
+                <div class="value-display" id="waveSpeedValue">0.05</div>
+            </div>
+            <div class="control-row">
+                <div class="control-label">Center Speed</div>
+                <input type="range" id="centerMovementSpeed" min="0" max="0.1" step="0.001" value="0.02">
+                <div class="value-display" id="centerMovementSpeedValue">0.02</div>
+            </div>
+            <div class="control-row">
+                <div class="control-label">Variability</div>
+                <input type="range" id="variability" min="0" max="1" step="0.01" value="0.1">
+                <div class="value-display" id="variabilityValue">0.1</div>
+            </div>
+            <div class="control-row">
+                <div class="control-label">Wavelength</div>
+                <input type="range" id="baseWavelength" min="1" max="100" step="1" value="10">
+                <div class="value-display" id="baseWavelengthValue">10</div>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h3>Color Controls</h3>
+            <div class="control-row">
+                <div class="control-label">Start Color</div>
+                <input type="range" id="startColor" min="0" max="359" step="1" value="225">
+                <div class="value-display" id="startColorValue">225</div>
+            </div>
+            <div class="control-row">
+                <div class="control-label">End Color</div>
+                <input type="range" id="endColor" min="0" max="359" step="1" value="285">
+                <div class="value-display" id="endColorValue">285</div>
+            </div>
+            <div class="control-row">
+                <div class="control-label">Cycle Speed</div>
+                <input type="range" id="colorCycleSpeed" min="0" max="50" step="1" value="10">
+                <div class="value-display" id="colorCycleSpeedValue">10</div>
+            </div>
+            <div class="control-row">
+                <div class="control-label">Color Spread</div>
+                <input type="range" id="colorSpread" min="0.1" max="10" step="0.1" value="1">
+                <div class="value-display" id="colorSpreadValue">1</div>
+            </div>
+            <div class="control-row">
+                <input type="checkbox" id="lockColorRange" checked>
+                <label for="lockColorRange">Lock Color Range</label>
+            </div>
+            <div id="colorPreview" class="color-preview"></div>
+        </div>
+        
+        <div class="control-group">
+            <h3>Render Settings</h3>
+            <div class="control-row">
+                <div class="control-label">Resolution</div>
+                <input type="range" id="resolution" min="0.25" max="1" step="0.05" value="0.5">
+                <div class="value-display" id="resolutionValue">0.5x</div>
+            </div>
+            <div class="control-row">
+                <div class="control-label">Centers</div>
+                <input type="range" id="numCenters" min="1" max="5" step="1" value="3">
+                <div class="value-display" id="numCentersValue">3</div>
+            </div>
+            <div class="control-row">
+                <input type="checkbox" id="showStats" checked>
+                <label for="showStats">Show Stats</label>
+            </div>
+            <div class="control-row">
+                <button id="resetBtn" style="padding: 10px; margin-top: 5px; width: 100%; font-size: 16px; border-radius: 5px; border: none; background: rgba(255, 255, 255, 0.2); color: white; cursor: pointer;">Reset to Defaults</button>
+            </div>
+        </div>
+    </div>
+    <button id="toggleControls" style="touch-action: manipulation;">Show Controls</button>
+    
+    <script>
+        // Get canvas and set initial resolution
+        const canvas = document.getElementById('myCanvas');
+        let renderWidth = 320;
+        let renderHeight = 240;
+        const ctx = canvas.getContext('2d');
+
+        // Settings object with defaults
+        const defaultSettings = {
+            waveSpeed: 0.14,
+            centerMovementSpeed: 0.047,
+            variability: 0.34,
+            baseWavelength: 23,
+            colorCycleSpeed: 24,
+            startColor: 286,
+            endColor: 192,
+            colorSpread: 0.6,
+            resolution: 0.45,
+            numCenters: 3,
+            lockColorRange: true,
+            showStats: true
+        };
+        
+        // Clone default settings for current settings
+        const settings = JSON.parse(JSON.stringify(defaultSettings));
+        
+        const paletteSize = 256;
+        let fpsTimes = [];
+        let lastFrameTime = 0;
+        let frameCount = 0;
+        let fps = 0;
+        
+        // Define centers - will be initialized based on numCenters
+        let centers = [];
+        let fixedPhaseOffsets = [];
+        let fixedWavelengthVariations = [];
+        
+        // Initialize centers and their properties
+        function initCenters() {
+            centers = [];
+            fixedPhaseOffsets = [];
+            fixedWavelengthVariations = [];
+            
+            for (let i = 0; i < settings.numCenters; i++) {
+                // Distribute centers around the canvas
+                const angle = (i / settings.numCenters) * 2 * Math.PI;
+                const radius = Math.min(renderWidth, renderHeight) * 0.3;
+                const x = renderWidth / 2 + Math.cos(angle) * radius;
+                const y = renderHeight / 2 + Math.sin(angle) * radius;
+                
+                // Random movement direction
+                const speed = 0.02 + Math.random() * 0.02;
+                const moveAngle = Math.random() * 2 * Math.PI;
+                
+                centers.push({
+                    x: x,
+                    y: y,
+                    dx: Math.cos(moveAngle) * speed,
+                    dy: Math.sin(moveAngle) * speed
+                });
+                
+                fixedPhaseOffsets.push(Math.random() * 2 * Math.PI);
+                fixedWavelengthVariations.push((Math.random() - 0.5));
+            }
+        }
+        
+        // Initialize color preview
+        function updateColorPreview() {
+            const container = document.getElementById('colorPreview');
+            container.innerHTML = '';
+            
+            const startHue = settings.startColor;
+            const endHue = settings.endColor;
+            
+            // Calculate the shortest distance between the colors on the color wheel
+            let hueDiff = (endHue - startHue + 360) % 360;
+            if (hueDiff > 180) hueDiff = hueDiff - 360;
+            
+            const numBoxes = 20;
+            for (let i = 0; i < numBoxes; i++) {
+                const box = document.createElement('div');
+                box.className = 'color-box';
+                
+                // Calculate hue for this box
+                const hue = (startHue + (hueDiff * (i / (numBoxes - 1))) + 360) % 360;
+                box.style.backgroundColor = `hsl(${hue}, 100%, 50%)`;
+                
+                container.appendChild(box);
+            }
+        }
+
+        // HSL to RGB conversion function
+        function hslToRgb(h, s, l) {
+            h = h % 360;
+            s = Math.min(1, Math.max(0, s));
+            l = Math.min(1, Math.max(0, l));
+            const c = (1 - Math.abs(2 * l - 1)) * s;
+            const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+            const m = l - c / 2;
+            let r, g, b;
+            if (h < 60) { r = c; g = x; b = 0; }
+            else if (h < 120) { r = x; g = c; b = 0; }
+            else if (h < 180) { r = 0; g = c; b = x; }
+            else if (h < 240) { r = 0; g = x; b = c; }
+            else if (h < 300) { r = x; g = 0; b = c; }
+            else { r = c; g = 0; b = x; }
+            return [
+                Math.round((r + m) * 255),
+                Math.round((g + m) * 255),
+                Math.round((b + m) * 255)
+            ];
+        }
+
+        // Generate color palette with range between startColor and endColor
+        function generatePalette(offset = 0) {
+            const palette = new Uint8ClampedArray(paletteSize * 4);
+            const startHue = settings.startColor;
+            let endHue = settings.endColor;
+            
+            // Calculate the shortest distance between the colors on the color wheel
+            let hueDiff = (endHue - startHue + 360) % 360;
+            if (hueDiff > 180) hueDiff = hueDiff - 360;
+            
+            for (let i = 0; i < paletteSize; i++) {
+                // Normalized position in the palette
+                const t = i / (paletteSize - 1);
+                
+                // Apply offset for animation if color range isn't locked
+                let huePosition;
+                if (settings.lockColorRange) {
+                    // Static color range - just interpolate between start and end
+                    huePosition = t;
+                } else {
+                    // Animated color range - shift the position but keep within range
+                    huePosition = (t + offset) % 1;
+                }
+                
+                // Calculate the final hue
+                const hue = (startHue + hueDiff * huePosition + 360) % 360;
+                
+                // Convert to RGB and store in palette
+                const [r, g, b] = hslToRgb(hue, 1, 0.5);
+                palette[i * 4] = r;
+                palette[i * 4 + 1] = g;
+                palette[i * 4 + 2] = b;
+                palette[i * 4 + 3] = 255;
+            }
+            return palette;
+        }
+
+        // Update center positions
+        function updateCenters() {
+            centers.forEach(center => {
+                center.x += center.dx * settings.centerMovementSpeed * renderWidth;
+                center.y += center.dy * settings.centerMovementSpeed * renderHeight;
+                if (center.x < 0 || center.x > renderWidth) center.dx *= -1;
+                if (center.y < 0 || center.y > renderHeight) center.dy *= -1;
+            });
+        }
+        
+        // Calculate FPS
+        function updateFPS(now) {
+            const elapsed = now - lastFrameTime;
+            lastFrameTime = now;
+            
+            fpsTimes.push(elapsed);
+            if (fpsTimes.length > 60) {
+                fpsTimes.shift();
+            }
+            
+            frameCount++;
+            if (frameCount >= 10) {
+                const sum = fpsTimes.reduce((a, b) => a + b, 0);
+                const avg = sum / fpsTimes.length;
+                fps = Math.round(1000 / avg);
+                frameCount = 0;
+            }
+        }
+        
+        // Render stats overlay
+        function renderStats() {
+            const statsDiv = document.getElementById('stats');
+            if (settings.showStats) {
+                statsDiv.style.display = 'block';
+                statsDiv.innerHTML = `
+                    FPS: ${fps}<br>
+                    Resolution: ${renderWidth}x${renderHeight}<br>
+                    Centers: ${centers.length}
+                `;
+            } else {
+                statsDiv.style.display = 'none';
+            }
+        }
+        
+        // Resize handler
+        function handleResize() {
+            // Update the physical canvas size to match the display size
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            // Set the rendering resolution based on the settings
+            renderWidth = Math.floor(window.innerWidth * settings.resolution);
+            renderHeight = Math.floor(window.innerHeight * settings.resolution);
+        }
+
+        // Animation loop
+        function animate(time) {
+            time = time * 0.001; // Convert to seconds
+            updateFPS(time * 1000);
+            updateCenters();
+            
+            // Calculate color cycle offset
+            const offset = (time * settings.colorCycleSpeed / 100) % 1;
+            const palette = generatePalette(offset);
+
+            // Calculate dynamic wavelengths and phase offsets
+            const phaseOffsets = fixedPhaseOffsets.map(offset => offset * settings.variability);
+            const wavelengths = fixedWavelengthVariations.map(variation => 
+                settings.baseWavelength * (1 + variation * settings.variability)
+            );
+
+            // Create a smaller imageData for rendering
+            const imageData = ctx.createImageData(renderWidth, renderHeight);
+            const data = imageData.data;
+            
+            // Render the wave interference
+            for (let y = 0; y < renderHeight; y++) {
+                for (let x = 0; x < renderWidth; x++) {
+                    let wave = 0;
+                    for (let i = 0; i < centers.length; i++) {
+                        const dx = x - centers[i].x;
+                        const dy = y - centers[i].y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        wave += Math.sin(2 * Math.PI * (distance / wavelengths[i] - settings.waveSpeed * time) + phaseOffsets[i]);
+                    }
+                    wave /= centers.length; // Normalize
+                    const normalizedWave = (wave + 1) / 2;
+                    const adjustedWave = Math.pow(normalizedWave, settings.colorSpread);
+                    const paletteIndex = Math.floor(adjustedWave * (paletteSize - 1));
+                    const idx = (y * renderWidth + x) * 4;
+                    data[idx] = palette[paletteIndex * 4];
+                    data[idx + 1] = palette[paletteIndex * 4 + 1];
+                    data[idx + 2] = palette[paletteIndex * 4 + 2];
+                    data[idx + 3] = 255;
+                }
+            }
+            
+            // Scale the rendered image to fill the canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = renderWidth;
+            tempCanvas.height = renderHeight;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.putImageData(imageData, 0, 0);
+            
+            // Use CSS scaling for better quality
+            ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
+            
+            // Render stats if enabled
+            renderStats();
+            
+            requestAnimationFrame(animate);
+        }
+
+        // Set up event listeners
+        document.getElementById('waveSpeed').addEventListener('input', function() {
+            settings.waveSpeed = parseFloat(this.value);
+            document.getElementById('waveSpeedValue').textContent = this.value;
+        });
+        
+        document.getElementById('centerMovementSpeed').addEventListener('input', function() {
+            settings.centerMovementSpeed = parseFloat(this.value);
+            document.getElementById('centerMovementSpeedValue').textContent = this.value;
+        });
+        
+        document.getElementById('variability').addEventListener('input', function() {
+            settings.variability = parseFloat(this.value);
+            document.getElementById('variabilityValue').textContent = this.value;
+        });
+        
+        document.getElementById('baseWavelength').addEventListener('input', function() {
+            settings.baseWavelength = parseFloat(this.value);
+            document.getElementById('baseWavelengthValue').textContent = this.value;
+        });
+        
+        document.getElementById('startColor').addEventListener('input', function() {
+            settings.startColor = parseFloat(this.value);
+            document.getElementById('startColorValue').textContent = this.value;
+            updateColorPreview();
+        });
+        
+        document.getElementById('endColor').addEventListener('input', function() {
+            settings.endColor = parseFloat(this.value);
+            document.getElementById('endColorValue').textContent = this.value;
+            updateColorPreview();
+        });
+        
+        document.getElementById('colorCycleSpeed').addEventListener('input', function() {
+            settings.colorCycleSpeed = parseFloat(this.value);
+            document.getElementById('colorCycleSpeedValue').textContent = this.value;
+        });
+        
+        document.getElementById('colorSpread').addEventListener('input', function() {
+            settings.colorSpread = parseFloat(this.value);
+            document.getElementById('colorSpreadValue').textContent = this.value;
+        });
+        
+        document.getElementById('resolution').addEventListener('input', function() {
+            settings.resolution = parseFloat(this.value);
+            document.getElementById('resolutionValue').textContent = this.value + 'x';
+            handleResize();
+        });
+        
+        document.getElementById('numCenters').addEventListener('input', function() {
+            settings.numCenters = parseInt(this.value);
+            document.getElementById('numCentersValue').textContent = this.value;
+            initCenters();
+        });
+        
+        document.getElementById('lockColorRange').addEventListener('change', function() {
+            settings.lockColorRange = this.checked;
+        });
+        
+        document.getElementById('showStats').addEventListener('change', function() {
+            settings.showStats = this.checked;
+        });
+        
+        document.getElementById('resetBtn').addEventListener('click', function() {
+            // Reset all settings to defaults
+            Object.assign(settings, defaultSettings);
+            
+            // Update all UI elements
+            const controls = document.querySelectorAll('input[type="range"], input[type="checkbox"]');
+            controls.forEach(control => {
+                if (control.type === 'range') {
+                    control.value = settings[control.id];
+                    document.getElementById(control.id + 'Value').textContent = 
+                        control.id === 'resolution' ? settings[control.id] + 'x' : settings[control.id];
+                } else if (control.type === 'checkbox') {
+                    control.checked = settings[control.id];
+                }
+            });
+            
+            // Reinitialize centers and resize
+            initCenters();
+            handleResize();
+            updateColorPreview();
+        });
+        
+        // Toggle controls visibility
+        document.getElementById('toggleControls').addEventListener('click', function() {
+            const controls = document.getElementById('controls');
+            if (controls.style.display === 'none') {
+                controls.style.display = 'flex';
+                this.textContent = 'Hide Controls';
+            } else {
+                controls.style.display = 'none';
+                this.textContent = 'Show Controls';
+            }
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', handleResize);
+        
+        // Initialize
+        handleResize();
+        initCenters();
+        updateColorPreview();
+        
+        // Initialize stats display
+        renderStats();
+        
+        // Start the animation
+        requestAnimationFrame(animate);
+    </script>
+</body>
+</html>
