@@ -215,23 +215,23 @@
             <h3>Wave Properties</h3>
             <div class="control-row">
                 <div class="control-label">Wave Speed</div>
-                <input type="range" id="waveSpeed" min="0" max="0.2" step="0.01" value="0.05">
-                <div class="value-display" id="waveSpeedValue">0.05</div>
+                <input type="range" id="waveSpeed" min="0" max="0.2" step="0.01" value="0.08">
+                <div class="value-display" id="waveSpeedValue">0.08</div>
             </div>
             <div class="control-row">
                 <div class="control-label">Center Speed</div>
-                <input type="range" id="centerMovementSpeed" min="0" max="0.1" step="0.001" value="0.1">
-                <div class="value-display" id="centerMovementSpeedValue">0.1</div>
+                <input type="range" id="centerMovementSpeed" min="0" max="0.1" step="0.001" value="0.05">
+                <div class="value-display" id="centerMovementSpeedValue">0.05</div>
             </div>
             <div class="control-row">
                 <div class="control-label">Variability</div>
-                <input type="range" id="variability" min="0" max="1" step="0.01" value="0.43">
-                <div class="value-display" id="variabilityValue">0.43</div>
+                <input type="range" id="variability" min="0" max="1" step="0.01" value="0.6">
+                <div class="value-display" id="variabilityValue">0.6</div>
             </div>
             <div class="control-row">
                 <div class="control-label">Wavelength</div>
-                <input type="range" id="baseWavelength" min="1" max="100" step="1" value="16">
-                <div class="value-display" id="baseWavelengthValue">16</div>
+                <input type="range" id="baseWavelength" min="1" max="100" step="1" value="20">
+                <div class="value-display" id="baseWavelengthValue">20</div>
             </div>
         </div>
         
@@ -239,23 +239,23 @@
             <h3>Color Controls</h3>
             <div class="control-row">
                 <div class="control-label">Start Color</div>
-                <input type="range" id="startColor" min="0" max="359" step="1" value="225">
-                <div class="value-display" id="startColorValue">225</div>
+                <input type="range" id="startColor" min="0" max="359" step="1" value="180">
+                <div class="value-display" id="startColorValue">180</div>
             </div>
             <div class="control-row">
                 <div class="control-label">End Color</div>
-                <input type="range" id="endColor" min="0" max="359" step="1" value="285">
-                <div class="value-display" id="endColorValue">285</div>
+                <input type="range" id="endColor" min="0" max="359" step="1" value="300">
+                <div class="value-display" id="endColorValue">300</div>
             </div>
             <div class="control-row">
                 <div class="control-label">Cycle Speed</div>
-                <input type="range" id="colorCycleSpeed" min="0" max="50" step="1" value="10">
-                <div class="value-display" id="colorCycleSpeedValue">10</div>
+                <input type="range" id="colorCycleSpeed" min="0" max="50" step="1" value="15">
+                <div class="value-display" id="colorCycleSpeedValue">15</div>
             </div>
             <div class="control-row">
                 <div class="control-label">Color Spread</div>
-                <input type="range" id="colorSpread" min="0.1" max="10" step="0.1" value="0.7">
-                <div class="value-display" id="colorSpreadValue">0.7</div>
+                <input type="range" id="colorSpread" min="0.1" max="10" step="0.1" value="0.85">
+                <div class="value-display" id="colorSpreadValue">0.85</div>
             </div>
             <div class="control-row">
                 <input type="checkbox" id="lockColorRange" checked>
@@ -363,16 +363,16 @@
 
         // Settings object with defaults
         const defaultSettings = {
-            waveSpeed: 0.05,
-            centerMovementSpeed: 0.1,
-            variability: 0.43,
-            baseWavelength: 16,
-            colorCycleSpeed: 10,
-            startColor: 225,
-            endColor: 285,
-            colorSpread: 0.7,
-            resolution: 0.35,
-            numCenters: 2,
+            waveSpeed: 0.08,           // Slightly faster wave movement
+            centerMovementSpeed: 0.05,  // Moderate center movement
+            variability: 0.6,          // More variation between waves
+            baseWavelength: 20,        // Slightly larger wavelength for more visible patterns
+            colorCycleSpeed: 15,       // Faster color cycling
+            startColor: 180,           // Cyan
+            endColor: 300,             // Purple
+            colorSpread: 0.85,         // More dramatic color distribution
+            resolution: 0.35,          // Keep as requested
+            numCenters: 2,             // Keep as requested
             lockColorRange: true,
             showStats: true,
             audioEnabled: false,
