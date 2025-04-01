@@ -3,7 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Wave Interference with Improved Controls</title>
+    <title>PSI Tribute - Second Reality Interference Effect</title>
+    
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+    <link rel="icon" type="image/x-icon" href="icons/favicon.ico">
+    <link rel="manifest" href="site.webmanifest">
+    
+    <!-- Primary Meta Tags -->
+    <meta name="title" content="PSI Tribute - Second Reality Interference Effect">
+    <meta name="description" content="A tribute to PSI's iconic interference effect from Future Crew's Second Reality demo (1993). Recreated in JavaScript using AI analysis of the original assembly code.">
+    <meta name="keywords" content="Second Reality, Future Crew, PSI, interference effect, demoscene, JavaScript, HTML5 Canvas, KOEA.ASM, tribute">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://stanchak.github.io/PSI/">
+    <meta property="og:title" content="PSI Tribute - Second Reality Interference Effect">
+    <meta property="og:description" content="A tribute to PSI's iconic interference effect from Future Crew's Second Reality demo (1993).">
+    <meta property="og:image" content="psi.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://stanchak.github.io/PSI/">
+    <meta property="twitter:title" content="PSI Tribute - Second Reality Interference Effect">
+    <meta property="twitter:description" content="A tribute to PSI's iconic interference effect from Future Crew's Second Reality demo (1993).">
+    <meta property="twitter:image" content="psi.jpg">
+
     <style>
         body {
             margin: 0;
@@ -142,6 +169,27 @@
         }
         
         /* Media queries for responsive design */
+        /* Audio-related styles */
+        .audio-mapping-select {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px;
+            border-radius: 4px;
+            flex-grow: 1;
+            font-size: 14px;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 16px;
+        }
+        
+        .audio-levels {
+            gap: 2px;
+        }
+        
         @media (min-width: 768px) {
             #controls {
                 flex-direction: row;
@@ -236,6 +284,73 @@
                 <button id="resetBtn" style="padding: 10px; margin-top: 5px; width: 100%; font-size: 16px; border-radius: 5px; border: none; background: rgba(255, 255, 255, 0.2); color: white; cursor: pointer;">Reset to Defaults</button>
             </div>
         </div>
+        
+        <div class="control-group">
+            <h3>Audio Input</h3>
+            <div class="control-row">
+                <button id="micToggle" style="padding: 10px; width: 100%; font-size: 16px; border-radius: 5px; border: none; background: rgba(255, 255, 255, 0.2); color: white; cursor: pointer;">Enable Microphone</button>
+            </div>
+            <div class="control-row">
+                <div class="control-label">Microphone</div>
+                <select id="micSelect" class="audio-mapping-select" disabled>
+                    <option value="">Select microphone...</option>
+                </select>
+            </div>
+            <div class="control-row" style="align-items: flex-start;">
+                <div class="control-label">Live Input</div>
+                <div style="margin-left: 10px; flex-grow: 1; position: relative; height: 60px;">
+                    <canvas id="audioVisualizer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); border-radius: 3px; border: 1px solid rgba(100, 200, 255, 0.3);"></canvas>
+                    <div id="visualizerFallback" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; align-items: center; justify-content: center; color: rgba(255,255,255,0.5); font-size: 12px; text-align: center;">
+                        Audio visualizer<br>will appear here
+                    </div>
+                </div>
+            </div>
+            <div class="control-row">
+                <div class="control-label">Sensitivity</div>
+                <input type="range" id="audioSensitivity" min="0.1" max="5" step="0.1" value="1.0">
+                <div class="value-display" id="audioSensitivityValue">1.0</div>
+            </div>
+            <div id="audioMappings">
+                <div class="control-row">
+                    <div class="control-label">Bass → </div>
+                    <select id="bassMapping" class="audio-mapping-select">
+                        <option value="waveSpeed">Wave Speed</option>
+                        <option value="wavelength" selected>Wavelength</option>
+                        <option value="colorCycle">Color Cycle</option>
+                        <option value="colorSpread">Color Spread</option>
+                        <option value="centerSpeed">Center Speed</option>
+                        <option value="none">None</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <div class="control-label">Mid → </div>
+                    <select id="midMapping" class="audio-mapping-select">
+                        <option value="waveSpeed">Wave Speed</option>
+                        <option value="wavelength">Wavelength</option>
+                        <option value="colorCycle" selected>Color Cycle</option>
+                        <option value="colorSpread">Color Spread</option>
+                        <option value="centerSpeed">Center Speed</option>
+                        <option value="none">None</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <div class="control-label">Treble → </div>
+                    <select id="trebleMapping" class="audio-mapping-select">
+                        <option value="waveSpeed" selected>Wave Speed</option>
+                        <option value="wavelength">Wavelength</option>
+                        <option value="colorCycle">Color Cycle</option>
+                        <option value="colorSpread">Color Spread</option>
+                        <option value="centerSpeed">Center Speed</option>
+                        <option value="none">None</option>
+                    </select>
+                </div>
+            </div>
+            <div id="audioLevels" class="audio-levels" style="display: flex; height: 20px; margin-top: 10px; background: rgba(0,0,0,0.3); border-radius: 3px;">
+                <div id="bassLevel" style="flex: 1; height: 100%; background: rgb(255,50,50); transform-origin: left; transform: scaleX(0);"></div>
+                <div id="midLevel" style="flex: 1; height: 100%; background: rgb(50,255,50); transform-origin: left; transform: scaleX(0);"></div>
+                <div id="trebleLevel" style="flex: 1; height: 100%; background: rgb(50,50,255); transform-origin: left; transform: scaleX(0);"></div>
+            </div>
+        </div>
     </div>
     <button id="toggleControls" style="touch-action: manipulation;">Show Controls</button>
     
@@ -259,8 +374,36 @@
             resolution: 0.45,
             numCenters: 3,
             lockColorRange: true,
-            showStats: true
+            showStats: true,
+            audioEnabled: false,
+            audioSensitivity: 1.0,
+            bassMapping: 'wavelength',
+            midMapping: 'colorCycle',
+            trebleMapping: 'waveSpeed'
         };
+        
+        // Audio variables
+        let audioContext;
+        let analyser;
+        let microphone;
+        let audioDataArray;
+        let timeDataArray;
+        const AUDIO_FFT_SIZE = 1024;
+        const BASS_RANGE = [20, 250];    // 20Hz - 250Hz
+        const MID_RANGE = [250, 2000];   // 250Hz - 2kHz
+        const TREBLE_RANGE = [2000, 16000]; // 2kHz - 16kHz
+        let audioVisualizerCtx;
+        let selectedMicId = '';
+        let microphoneDevices = [];
+        
+        // Audio level visualization
+        let bassValue = 0;
+        let midValue = 0;
+        let trebleValue = 0;
+        let visualizerAnimationId = null;
+        
+        // Original values to return to when audio is disabled
+        const originalValues = {};
         
         // Clone default settings for current settings
         const settings = JSON.parse(JSON.stringify(defaultSettings));
@@ -423,13 +566,520 @@
             const statsDiv = document.getElementById('stats');
             if (settings.showStats) {
                 statsDiv.style.display = 'block';
+                let audioStatus = '';
+                
+                if (settings.audioEnabled) {
+                    // Get current microphone label - using actual tracked device
+                    let micLabel = "Default Microphone";
+                    
+                    // First try getting the label from the select element (most reliable)
+                    const micSelect = document.getElementById('micSelect');
+                    if (micSelect && micSelect.selectedIndex > 0) {
+                        const selectedOption = micSelect.options[micSelect.selectedIndex];
+                        micLabel = selectedOption.textContent;
+                    } 
+                    // Fallback: search through device list
+                    else {
+                        const selectedMic = microphoneDevices.find(device => device.deviceId === selectedMicId);
+                        if (selectedMic && selectedMic.label) {
+                            micLabel = selectedMic.label;
+                        }
+                    }
+                    
+                    // Format to get a concise label
+                    if (micLabel.includes('(')) {
+                        const parts = micLabel.split('(');
+                        // For Mac we often want the part in parentheses which shows if it's built-in, etc.
+                        const part1 = parts[0].trim();
+                        const part2 = parts[1].replace(')', '').trim();
+                        
+                        // Use the more informative part or combine them
+                        if (part1.toLowerCase().includes('default') || part1.length < 3) {
+                            micLabel = part2;
+                        } else if (part2.toLowerCase().includes('built-in')) {
+                            micLabel = `${part1} (Built-in)`;
+                        } else {
+                            micLabel = part1;
+                        }
+                    }
+                    
+                    // Final truncation if needed
+                    if (micLabel.length > 25) {
+                        micLabel = micLabel.substring(0, 22) + '...';
+                    }
+                    
+                    audioStatus = `<br>Audio: ON [${micLabel}]<br>Levels: B:${bassValue.toFixed(2)}, M:${midValue.toFixed(2)}, T:${trebleValue.toFixed(2)}`;
+                }
+                
                 statsDiv.innerHTML = `
                     FPS: ${fps}<br>
                     Resolution: ${renderWidth}x${renderHeight}<br>
-                    Centers: ${centers.length}
+                    Centers: ${centers.length}${audioStatus}
                 `;
             } else {
                 statsDiv.style.display = 'none';
+            }
+        }
+        
+        // Force device enumeration with full labels
+        async function forceDeviceEnumeration() {
+            try {
+                // We need to get actual access to the microphone to get the full device labels
+                console.log("Requesting temporary microphone access to get device labels...");
+                const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                // Now that we have permission, enumerate devices - this should give us full labels
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                
+                // Log all found devices to console to help debug
+                console.log("All devices found:", devices);
+                
+                // We don't need to keep this stream, just needed for permission
+                tempStream.getTracks().forEach(track => {
+                    console.log(`Stopping temporary track: ${track.kind} - ${track.label}`);
+                    track.stop();
+                });
+                
+                return devices.filter(device => device.kind === 'audioinput');
+            } catch (error) {
+                console.error('Error enumerating devices with full labels:', error);
+                return [];
+            }
+        }
+        
+        // Enumerate available audio devices
+        async function enumerateAudioDevices() {
+            try {
+                // Force enumeration with permissions to get full device labels
+                microphoneDevices = await forceDeviceEnumeration();
+                
+                if (microphoneDevices.length === 0) {
+                    console.warn("No microphone devices found or permission denied");
+                    return [];
+                }
+                
+                // Populate the dropdown
+                const select = document.getElementById('micSelect');
+                select.innerHTML = '<option value="">Select microphone...</option>';
+                
+                // Log which devices we found
+                console.log('Available microphones:', microphoneDevices.map(d => d.label || 'Unnamed device'));
+                
+                // Add each device to the dropdown
+                microphoneDevices.forEach((device, index) => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    
+                    // Get proper label for the device
+                    // Starting with default if no label is available
+                    let label = device.label;
+                    if (!label || label.trim() === '') {
+                        label = `Microphone ${index + 1}`;
+                    }
+                    
+                    // For macOS, which often has format: "Device Name (Type)"
+                    if (label.includes('(')) {
+                        option.setAttribute('data-full-name', label);
+                    }
+                    
+                    // Keep labels reasonably sized
+                    if (label.length > 30) {
+                        label = label.substring(0, 27) + '...';
+                    }
+                    
+                    option.textContent = label;
+                    select.appendChild(option);
+                });
+                
+                // Enable the select if we have microphones
+                select.disabled = microphoneDevices.length === 0;
+                
+                // If we have devices but no selection, select the first one
+                if (microphoneDevices.length > 0 && !selectedMicId) {
+                    selectedMicId = microphoneDevices[0].deviceId;
+                    select.value = selectedMicId;
+                }
+                
+                return microphoneDevices;
+            } catch (error) {
+                console.error('Error enumerating devices:', error);
+                return [];
+            }
+        }
+        
+        // Initialize the audio visualizer with DOM fallback
+        function initAudioVisualizer() {
+            // Show fallback message initially
+            document.getElementById('visualizerFallback').style.display = 'flex';
+            
+            const canvas = document.getElementById('audioVisualizer');
+            
+            try {
+                // Create canvas context
+                audioVisualizerCtx = canvas.getContext('2d', { 
+                    alpha: false,  // Optimization for performance
+                    desynchronized: true // Potential performance boost
+                });
+                
+                // Get parent container dimensions
+                const container = canvas.parentElement;
+                const rect = container.getBoundingClientRect();
+                
+                // Log for debugging
+                console.log("Visualizer container size:", rect.width, "x", rect.height);
+                
+                // Set canvas dimensions to match container (crucial step)
+                canvas.width = Math.max(rect.width, 100);
+                canvas.height = Math.max(rect.height, 50);
+                
+                console.log("Canvas size set to:", canvas.width, "x", canvas.height);
+                
+                // Draw initial state - black background
+                audioVisualizerCtx.fillStyle = '#000000';
+                audioVisualizerCtx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Initialize with empty bars
+                const barCount = 10;
+                const barWidth = Math.floor((canvas.width - (barCount+1)) / barCount);
+                
+                audioVisualizerCtx.fillStyle = 'rgba(100, 200, 255, 0.2)';
+                
+                for (let i = 0; i < barCount; i++) {
+                    const barX = i * (barWidth + 1) + 1;
+                    audioVisualizerCtx.fillRect(barX, canvas.height - 5, barWidth, 5);
+                }
+                
+                // Hide fallback message now that canvas is working
+                document.getElementById('visualizerFallback').style.display = 'none';
+                
+                return true;
+            } catch (error) {
+                console.error("Error initializing canvas:", error);
+                // Keep fallback message displayed
+                document.getElementById('visualizerFallback').style.display = 'flex';
+                return false;
+            }
+        }
+        
+        // Completely simplified visualizer using DOM elements as backup approach
+        function drawAudioVisualizer() {
+            if (!settings.audioEnabled || !analyser) {
+                return;
+            }
+            
+            try {
+                // Get frequency data (works better than time data for simple visualization)
+                if (!audioDataArray) {
+                    audioDataArray = new Uint8Array(analyser.frequencyBinCount);
+                }
+                
+                analyser.getByteFrequencyData(audioDataArray);
+                
+                // Get canvas and dimensions
+                const canvas = document.getElementById('audioVisualizer');
+                const width = canvas.width;
+                const height = canvas.height;
+                
+                if (!audioVisualizerCtx) {
+                    // Try to recreate context if it was lost
+                    audioVisualizerCtx = canvas.getContext('2d');
+                    if (!audioVisualizerCtx) {
+                        throw new Error("Could not get canvas context");
+                    }
+                }
+                
+                // Clear canvas
+                audioVisualizerCtx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+                audioVisualizerCtx.fillRect(0, 0, width, height);
+                
+                // Simplified bar visualization with fewer bars
+                const barCount = 10; // Fewer, more visible bars
+                const barWidth = Math.floor((width - (barCount+1)) / barCount);
+                const barSpacing = 1;
+                
+                // Use frequency data for nice visualization
+                // Divide frequency data into ranges
+                const totalBins = audioDataArray.length;
+                const binsPerBar = Math.floor(totalBins / barCount);
+                
+                for (let i = 0; i < barCount; i++) {
+                    // Get average value for this frequency range
+                    let sum = 0;
+                    const startBin = i * binsPerBar;
+                    const endBin = Math.min(startBin + binsPerBar, totalBins);
+                    
+                    for (let j = startBin; j < endBin; j++) {
+                        sum += audioDataArray[j];
+                    }
+                    
+                    // Calculate average (0-255)
+                    const average = sum / binsPerBar;
+                    
+                    // Scale to height (leaves a small margin)
+                    const barHeight = Math.max(2, (average / 255) * (height - 4));
+                    
+                    // Calculate color based on frequency (blue to cyan to green)
+                    const hue = 180 + (i / barCount) * 60; // 180-240 range (cyan-blue)
+                    audioVisualizerCtx.fillStyle = `hsl(${hue}, 80%, 60%)`;
+                    
+                    // Draw bar from bottom
+                    const barX = i * (barWidth + barSpacing) + barSpacing;
+                    const barY = height - barHeight;
+                    
+                    audioVisualizerCtx.fillRect(barX, barY, barWidth, barHeight);
+                }
+                
+                // Hide fallback when visualization is working
+                document.getElementById('visualizerFallback').style.display = 'none';
+                
+                // Schedule next frame
+                visualizerAnimationId = requestAnimationFrame(drawAudioVisualizer);
+                
+            } catch (error) {
+                console.error("Error in audio visualizer:", error);
+                
+                // Show fallback message since visualization failed
+                document.getElementById('visualizerFallback').style.display = 'flex';
+                
+                // Still continue animation in case it can recover
+                visualizerAnimationId = requestAnimationFrame(drawAudioVisualizer);
+            }
+        }
+                
+        // Setup audio processing
+        async function setupAudio() {
+            try {
+                // Store original values before audio takes over
+                saveOriginalValues();
+                
+                // Create audio context if it doesn't exist
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                // Enumerate available audio devices (this will show proper labels)
+                await enumerateAudioDevices();
+                
+                console.log(`Using microphone with ID: ${selectedMicId}`);
+                
+                // Get microphone access with selected device if available
+                const constraints = { 
+                    audio: selectedMicId ? { deviceId: { exact: selectedMicId } } : true,
+                    video: false 
+                };
+                
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                
+                // Create audio analyser
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = AUDIO_FFT_SIZE;
+                analyser.smoothingTimeConstant = 0.85;
+                
+                // Connect microphone to analyser
+                microphone = audioContext.createMediaStreamSource(stream);
+                microphone.connect(analyser);
+                
+                // Create data arrays for analysis
+                audioDataArray = new Uint8Array(analyser.frequencyBinCount);
+                timeDataArray = new Uint8Array(analyser.frequencyBinCount);
+                
+                // Initialize and start the audio visualizer
+                initAudioVisualizer();
+                
+                // Only start a new animation frame if one isn't already running
+                if (!visualizerAnimationId) {
+                    drawAudioVisualizer();
+                }
+                
+                // Enable audio in settings
+                settings.audioEnabled = true;
+                
+                // Enable the microphone selection dropdown
+                document.getElementById('micSelect').disabled = false;
+                
+                // Update the UI
+                document.getElementById('micToggle').textContent = 'Disable Microphone';
+                document.getElementById('micToggle').style.background = 'rgba(255, 100, 100, 0.4)';
+                
+                // Make sure the current microphone is selected in the dropdown
+                const micSelect = document.getElementById('micSelect');
+                if (selectedMicId && micSelect.value !== selectedMicId) {
+                    micSelect.value = selectedMicId;
+                }
+                
+                console.log('Audio setup complete');
+            } catch (error) {
+                console.error('Error setting up audio:', error);
+                alert('Could not access microphone. Please check permissions.');
+                
+                settings.audioEnabled = false;
+                document.getElementById('micToggle').textContent = 'Enable Microphone';
+                document.getElementById('micToggle').style.background = 'rgba(255, 255, 255, 0.2)';
+            }
+        }
+        
+        // Stop audio processing
+        function stopAudio() {
+            if (microphone && audioContext) {
+                microphone.disconnect();
+                
+                // Some browsers may not support close()
+                if (audioContext.state !== 'closed' && audioContext.close) {
+                    audioContext.close();
+                }
+                
+                // Stop visualizer animation
+                if (visualizerAnimationId) {
+                    cancelAnimationFrame(visualizerAnimationId);
+                    visualizerAnimationId = null;
+                }
+                
+                // Clear visualizer
+                if (audioVisualizerCtx) {
+                    const canvas = document.getElementById('audioVisualizer');
+                    audioVisualizerCtx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                    audioVisualizerCtx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+                
+                // Restore original values
+                restoreOriginalValues();
+                
+                microphone = null;
+                analyser = null;
+                audioContext = null;
+                settings.audioEnabled = false;
+                
+                // Update the UI
+                document.getElementById('micToggle').textContent = 'Enable Microphone';
+                document.getElementById('micToggle').style.background = 'rgba(255, 255, 255, 0.2)';
+                document.getElementById('micSelect').disabled = true;
+                
+                // Reset audio level indicators
+                document.getElementById('bassLevel').style.transform = 'scaleX(0)';
+                document.getElementById('midLevel').style.transform = 'scaleX(0)';
+                document.getElementById('trebleLevel').style.transform = 'scaleX(0)';
+                
+                bassValue = 0;
+                midValue = 0;
+                trebleValue = 0;
+                
+                console.log('Audio stopped');
+            }
+        }
+        
+        // Save original values before audio modulation
+        function saveOriginalValues() {
+            originalValues.waveSpeed = settings.waveSpeed;
+            originalValues.baseWavelength = settings.baseWavelength;
+            originalValues.colorCycleSpeed = settings.colorCycleSpeed;
+            originalValues.colorSpread = settings.colorSpread;
+            originalValues.centerMovementSpeed = settings.centerMovementSpeed;
+        }
+        
+        // Restore original values when audio is disabled
+        function restoreOriginalValues() {
+            settings.waveSpeed = originalValues.waveSpeed;
+            settings.baseWavelength = originalValues.baseWavelength;
+            settings.colorCycleSpeed = originalValues.colorCycleSpeed;
+            settings.colorSpread = originalValues.colorSpread;
+            settings.centerMovementSpeed = originalValues.centerMovementSpeed;
+            
+            // Update UI sliders
+            document.getElementById('waveSpeed').value = settings.waveSpeed;
+            document.getElementById('waveSpeedValue').textContent = settings.waveSpeed;
+            
+            document.getElementById('baseWavelength').value = settings.baseWavelength;
+            document.getElementById('baseWavelengthValue').textContent = settings.baseWavelength;
+            
+            document.getElementById('colorCycleSpeed').value = settings.colorCycleSpeed;
+            document.getElementById('colorCycleSpeedValue').textContent = settings.colorCycleSpeed;
+            
+            document.getElementById('colorSpread').value = settings.colorSpread;
+            document.getElementById('colorSpreadValue').textContent = settings.colorSpread;
+            
+            document.getElementById('centerMovementSpeed').value = settings.centerMovementSpeed;
+            document.getElementById('centerMovementSpeedValue').textContent = settings.centerMovementSpeed;
+        }
+        
+        // Process audio data and update visualization parameters
+        function processAudio() {
+            if (!settings.audioEnabled || !analyser) return;
+            
+            // Get frequency data
+            analyser.getByteFrequencyData(audioDataArray);
+            
+            // Get frequency ranges
+            const frequencyResolution = audioContext.sampleRate / AUDIO_FFT_SIZE;
+            
+            // Calculate indices for different frequency ranges
+            const bassStart = Math.floor(BASS_RANGE[0] / frequencyResolution);
+            const bassEnd = Math.floor(BASS_RANGE[1] / frequencyResolution);
+            
+            const midStart = Math.floor(MID_RANGE[0] / frequencyResolution);
+            const midEnd = Math.floor(MID_RANGE[1] / frequencyResolution);
+            
+            const trebleStart = Math.floor(TREBLE_RANGE[0] / frequencyResolution);
+            const trebleEnd = Math.min(Math.floor(TREBLE_RANGE[1] / frequencyResolution), audioDataArray.length - 1);
+            
+            // Calculate average levels for each range
+            let bassSum = 0;
+            for (let i = bassStart; i < bassEnd; i++) {
+                bassSum += audioDataArray[i];
+            }
+            
+            let midSum = 0;
+            for (let i = midStart; i < midEnd; i++) {
+                midSum += audioDataArray[i];
+            }
+            
+            let trebleSum = 0;
+            for (let i = trebleStart; i < trebleEnd; i++) {
+                trebleSum += audioDataArray[i];
+            }
+            
+            // Normalize to 0-1 range
+            bassValue = (bassSum / (bassEnd - bassStart)) / 255;
+            midValue = (midSum / (midEnd - midStart)) / 255;
+            trebleValue = (trebleSum / (trebleEnd - trebleStart)) / 255;
+            
+            // Apply sensitivity
+            const sensitivity = settings.audioSensitivity;
+            bassValue = Math.min(1, bassValue * sensitivity);
+            midValue = Math.min(1, midValue * sensitivity);
+            trebleValue = Math.min(1, trebleValue * sensitivity);
+            
+            // Update visualizer bars
+            document.getElementById('bassLevel').style.transform = `scaleX(${bassValue})`;
+            document.getElementById('midLevel').style.transform = `scaleX(${midValue})`;
+            document.getElementById('trebleLevel').style.transform = `scaleX(${trebleValue})`;
+            
+            // Apply mappings to settings
+            applyAudioMapping(settings.bassMapping, bassValue);
+            applyAudioMapping(settings.midMapping, midValue);
+            applyAudioMapping(settings.trebleMapping, trebleValue);
+        }
+        
+        // Apply audio value to the mapped parameter
+        function applyAudioMapping(mapping, value) {
+            switch (mapping) {
+                case 'waveSpeed':
+                    settings.waveSpeed = originalValues.waveSpeed * (1 + value * 3);
+                    break;
+                case 'wavelength':
+                    settings.baseWavelength = originalValues.baseWavelength * (1 + value * 5);
+                    break;
+                case 'colorCycle':
+                    settings.colorCycleSpeed = originalValues.colorCycleSpeed * (1 + value * 5);
+                    break;
+                case 'colorSpread':
+                    settings.colorSpread = originalValues.colorSpread * (1 + value * 3);
+                    break;
+                case 'centerSpeed':
+                    settings.centerMovementSpeed = originalValues.centerMovementSpeed * (1 + value * 5);
+                    break;
+                case 'none':
+                    // Do nothing
+                    break;
             }
         }
         
@@ -449,6 +1099,11 @@
             time = time * 0.001; // Convert to seconds
             updateFPS(time * 1000);
             updateCenters();
+            
+            // Process audio if enabled
+            if (settings.audioEnabled) {
+                processAudio();
+            }
             
             // Calculate color cycle offset
             const offset = (time * settings.colorCycleSpeed / 100) % 1;
@@ -602,6 +1257,44 @@
         
         // Handle window resize
         window.addEventListener('resize', handleResize);
+        
+        // Audio controls
+        document.getElementById('micToggle').addEventListener('click', function() {
+            if (settings.audioEnabled) {
+                stopAudio();
+            } else {
+                setupAudio();
+            }
+        });
+        
+        document.getElementById('micSelect').addEventListener('change', function() {
+            if (this.value) {
+                selectedMicId = this.value;
+                
+                // If audio is already enabled, restart with new microphone
+                if (settings.audioEnabled) {
+                    stopAudio();
+                    setTimeout(() => setupAudio(), 300); // Small delay to ensure cleanup
+                }
+            }
+        });
+        
+        document.getElementById('audioSensitivity').addEventListener('input', function() {
+            settings.audioSensitivity = parseFloat(this.value);
+            document.getElementById('audioSensitivityValue').textContent = this.value;
+        });
+        
+        document.getElementById('bassMapping').addEventListener('change', function() {
+            settings.bassMapping = this.value;
+        });
+        
+        document.getElementById('midMapping').addEventListener('change', function() {
+            settings.midMapping = this.value;
+        });
+        
+        document.getElementById('trebleMapping').addEventListener('change', function() {
+            settings.trebleMapping = this.value;
+        });
         
         // Initialize
         handleResize();
