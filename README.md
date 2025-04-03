@@ -33,7 +33,7 @@ Simply open `index.html` in a modern web browser to see the effect in action.
 ## Credits
 
 Original effect by PSI (Future Crew) in Second Reality (1993)
-Modern implementation by [Your Name]
+Modern implementation by Chris Stanchak
 
 ## References
 
